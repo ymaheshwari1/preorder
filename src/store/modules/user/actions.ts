@@ -12,6 +12,7 @@ import { UtilService } from '@/services/UtilService'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
 import emitter from '@/event-bus'
 import store from '@/store'
+import { UserMaargService } from '@/services/UserMaargService'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -22,8 +23,10 @@ const actions: ActionTree<UserState, RootState> = {
 
     const { token, oms } = payload;
     dispatch("setUserInstanceUrl", oms);
+    const isMoqui = await UserMaargService.fetchLoginOptions()
+    commit(types.USER_IS_MOQUI_ONLY_UPDATED, isMoqui)
     try {
-      if (token) {
+      if(token && !isMoqui) {
         // Getting the permissions list from server
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
 
@@ -97,13 +100,73 @@ const actions: ActionTree<UserState, RootState> = {
         if (userProfile.userTimeZone) {
           Settings.defaultZone = userProfile.userTimeZone;
         }
+      } else if(token) {
+        const permissionId = process.env.VUE_APP_PERMISSION_ID;
 
+        // Prepare permissions list
+        const serverPermissionsFromRules = getServerPermissionsFromRules();
+        if (permissionId) serverPermissionsFromRules.push(permissionId);
+
+        const serverPermissions = await UserMaargService.getUserPermissions({
+          permissionIds: [...new Set(serverPermissionsFromRules)]
+        }, token);
+        const appPermissions = prepareAppPermissions(serverPermissions);
+
+        // Checking if the user has permission to access the app
+        // If there is no configuration, the permission check is not enabled
+        if (permissionId) {
+          const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId );
+          // If there are any errors or permission check fails do not allow user to login
+          if (!hasPermission) {
+            const permissionError = "You do not have permission to access the app.";
+            showToast(translate(permissionError));
+            console.error("error", permissionError);
+            return Promise.reject(new Error(permissionError));
+          }
+        }
+
+        const userProfile = await UserMaargService.getUserProfile(token);
+        userProfile.userTimeZone = userProfile.timeZone
+        try {
+          userProfile.stores = await UserMaargService.getEComStores(token);
+        } catch (error) {
+          const reason = "Unable to login. Product Store not found";
+          console.error(reason, error);
+          showToast(translate(reason));
+          return Promise.reject(new Error(reason));
+        }
+        setPermissions(appPermissions);
+
+        if (userProfile.userTimeZone) {
+          Settings.defaultZone = userProfile.userTimeZone;
+        }
+        
+        let preferredStore = userProfile.stores[0];
+        const preferredStoreId =  await UserMaargService.getPreferredStore(userProfile.userId, token);
+        if (preferredStoreId) {
+          const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
+          store && (preferredStore = store)
+        }
+        
         // TODO user single mutation
         commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
         commit(types.USER_INFO_UPDATED, userProfile);
         commit(types.USER_TOKEN_CHANGED, { newToken: token });
         commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
         updateToken(token);
+
+        useUserStore().currentEComStore = preferredStore
+        // dispatch("setEcomStore", { eComStore: preferredStore })
+        // await useUserStore().setEComStorePreference(preferredStore)
+
+        // Get product identification from api using dxp-component
+        // await useProductIdentificationStore().getIdentificationPref(preferredStoreId)
+        //   .catch((error) => console.error(error));
+
+        setPermissions(appPermissions);
+        if (userProfile.userTimeZone) {
+          Settings.defaultZone = userProfile.userTimeZone;
+        }
       }
     } catch (err: any) {
       showToast(translate('Something went wrong'));
@@ -115,14 +178,14 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Logout user
    */
-  async logout ({ commit }, payload) {
+  async logout ({ commit, state }, payload) {
     // store the url on which we need to redirect the user after logout api completes in case of SSO enabled
     let redirectionUrl = ''
 
     emitter.emit('presentLoader')
     // Calling the logout api to flag the user as logged out, only when user is authorised
     // if the user is already unauthorised then not calling the logout api as it returns 401 again that results in a loop, thus there is no need to call logout api if the user is unauthorised
-    if(!payload?.isUserUnauthorised) {
+    if(!payload?.isUserUnauthorised && !state.isMoquiOnly) {
       let resp;
 
       // wrapping the parsing logic in try catch as in some case the logout api makes redirection, and then we are unable to parse the resp and thus the logout process halts

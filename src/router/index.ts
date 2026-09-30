@@ -12,6 +12,8 @@ import { loader } from '@/user-utils';
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils';
 import { translate } from '@/i18n';
+import PurchaseOrders from '@/views/PurchaseOrders.vue';
+import PurchaseOrderDetail from '@/views/PurchaseOrderDetail.vue';
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -102,6 +104,25 @@ const routes: Array<RouteRecordRaw> = [
     component: Settings,
     beforeEnter: authGuard
   },
+  {
+    path: '/purchase-orders',
+    name: 'PurchaseOrders',
+    component: PurchaseOrders,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_PURCHASE_ORDER_VIEW"
+    }
+  },
+  {
+    path: '/purchase-order-detail/:id',
+    name: 'PurchaseOrderDetail',
+    component: PurchaseOrderDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_PURCHASE_ORDER_VIEW"
+    }
+  }
 ]
 
 const router = createRouter({

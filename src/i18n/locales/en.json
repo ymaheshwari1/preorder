@@ -98,6 +98,8 @@
     "Listed on all stores": "Listed on all stores",
     "Listed on store(s)": "Listed on {count} store(s)",
     "Loading": "Loading",
+    "Loading Purchase Order": "Loading Purchase Order",
+    "Loading Purchase Orders": "Loading Purchase Orders",
     "Login": "Login",
     "Logging in": "Logging in",
     "Logout": "Logout",

@@ -20,8 +20,8 @@
             is added on sides from ion-item and ion-padding-vertical to compensate the removed
             vertical padding -->
             <ion-card-header class="ion-no-padding ion-padding-vertical">
-              <ion-card-subtitle>{{ userProfile?.userLoginId }}</ion-card-subtitle>
-              <ion-card-title>{{ userProfile.partyName }}</ion-card-title>
+              <ion-card-subtitle>{{ userProfile?.userLoginId || userProfile.username }}</ion-card-subtitle>
+              <ion-card-title>{{ userProfile.partyName || userProfile.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
           <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
@@ -38,7 +38,20 @@
         <h1>{{ $t('OMS') }}</h1>
       </div>
       <section>
-        <DxpOmsInstanceNavigator />
+        <ion-card v-if="isMoquiOnly">
+          <ion-card-header>
+            <ion-card-subtitle>
+              {{ $t('OMS instance') }}
+            </ion-card-subtitle>
+            <ion-card-title data-testid="settings-oms-instance">
+              {{ maargInstance }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
+          </ion-card-content>
+        </ion-card>
+        <DxpOmsInstanceNavigator v-else />
 
         <ion-card>
           <ion-card-header>
@@ -64,8 +77,32 @@
       <DxpAppVersionInfo />
 
       <section>
-        <DxpProductIdentifier />
+        <DxpProductIdentifier v-if="!isMoquiOnly" />
         <DxpTimeZoneSwitcher @timeZoneUpdated="timeZoneUpdated" />
+
+        <ion-card v-if="isMoquiOnly" data-testid="settings-product-identifier-card">
+          <ion-card-header>
+            <ion-card-title>
+              {{ 'Product Identifier' }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ 'Choosing a product identifier allows you to view products with your preferred identifiers.' }}
+          </ion-card-content>
+
+          <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-primary-id-item">
+            <ion-select :label="$t('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')" data-testid="settings-primary-id-select">
+              <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-secondary-id-item">
+            <ion-select :label="$t('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')" data-testid="settings-secondary-id-select">
+              <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+              <!-- <ion-select-option value="">{{ "None" }}</ion-select-option> -->
+            </ion-select>
+          </ion-item>
+        </ion-card>
 
         <ion-card>
           <ion-card-header>
@@ -150,6 +187,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
+      isMoquiOnly: "user/isMoquiOnly",
+      maargInstance: "user/getInstanceUrl",
       userProfile: 'user/getUserProfile',
       currentEComStore: 'user/getCurrentEComStore',
       currentOrderParking: 'user/getCurrentOrderParking',

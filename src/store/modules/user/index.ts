@@ -18,7 +18,9 @@ const userModule: Module<UserState, RootState> = {
       pwaState: {
         updateExists: false,
         registration: null,
-      }
+      },
+      omsRedirectionUrl: "",
+      isMoquiOnly: false
     },
     getters,
     actions,

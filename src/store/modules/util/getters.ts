@@ -8,6 +8,12 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getInventoryConfig: (state) => (type: string, productStoreId: string) => {
     return Object.keys((state.config)).length && (Object.keys((state.config as any)[type]).length) ? (state.config as any)[type][productStoreId] : {}
+  },
+  getEnumDetail: (state) => (enumId: string) => {
+    return state.enums[enumId] ? state.enums[enumId] : "-";
+  },
+  getFacilityName: (state) => (facilityId: string) => {
+    return state.facilities[facilityId] ? state.facilities[facilityId]?.facilityName : facilityId || "-";
   }
 }
 export default getters;

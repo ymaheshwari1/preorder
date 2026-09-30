@@ -41,7 +41,7 @@ import {
 import { computed, defineComponent} from "vue"
 import { mapGetters } from "vuex";
 
-import { albumsOutline, shirtOutline, pricetagsOutline, settingsOutline } from "ionicons/icons";
+import { albumsOutline, shirtOutline, pricetagsOutline, settingsOutline, receiptOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -104,11 +104,20 @@ export default defineComponent({
         }
       },
       {
+        title: "PurchaseOrders",
+        url: "/purchase-orders",
+        iosIcon: receiptOutline,
+        mdIcon: receiptOutline,
+        meta: {
+          permissionId: "APP_PURCHASE_ORDER_VIEW"
+        }
+      },
+      {
         title: "Settings",
         url: "/settings",
         iosIcon: settingsOutline,
-        mdIcon: settingsOutline,
-      }
+        mdIcon: settingsOutline
+      },
     ];
 
     const selectedIndex = computed(() => {
