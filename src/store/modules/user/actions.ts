@@ -6,7 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import { Settings } from 'luxon'
-import { updateInstanceUrl, updateToken, resetConfig, logout, getUserPreference } from '@/adapter'
+import { client, updateInstanceUrl, updateToken, resetConfig, logout, getUserPreference } from '@/adapter'
 import { useAuthStore, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
@@ -163,6 +163,9 @@ const actions: ActionTree<UserState, RootState> = {
         // await useProductIdentificationStore().getIdentificationPref(preferredStoreId)
         //   .catch((error) => console.error(error));
 
+        // Get product identification pref from moqui
+        await dispatch("fetchProductIdentificationPref", preferredStore?.productStoreId)
+
         setPermissions(appPermissions);
         if (userProfile.userTimeZone) {
           Settings.defaultZone = userProfile.userTimeZone;
@@ -314,7 +317,140 @@ const actions: ActionTree<UserState, RootState> = {
   },
     updatePwaState({ commit }, payload) {
       commit(types.USER_PWA_STATE_UPDATED, payload);
+    },
+
+  /**
+   * Fetch product identification pref for the product store, creates the pref with default value if not exists
+   */
+  async fetchProductIdentificationPref({ commit, state, getters }, productStoreId) {
+    const productIdentificationPref = { primaryId: "productId", secondaryId: "" }
+
+    if(!productStoreId) {
+      commit(types.USER_PRODUCT_IDENTIFICATION_PREF_UPDATED, productIdentificationPref)
+      return
     }
+
+    try {
+      const resp = await client({
+        url: `admin/productStores/${productStoreId}/settings`,
+        method: "GET",
+        baseURL: getters.getMaargBaseUrl,
+        params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" },
+        headers: {
+          Authorization: 'Bearer ' + state.token,
+          'Content-Type': 'application/json'
+        }
+      }) as any
+
+      const settings = resp.data
+      if(settings[0]?.settingValue) {
+        const respValue = JSON.parse(settings[0].settingValue)
+        productIdentificationPref.primaryId = respValue.primaryId
+        productIdentificationPref.secondaryId = respValue.secondaryId
+      } else {
+        await client({
+          url: `admin/productStores/${productStoreId}/settings`,
+          method: "POST",
+          baseURL: getters.getMaargBaseUrl,
+          data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(productIdentificationPref) },
+          headers: {
+            Authorization: 'Bearer ' + state.token,
+            'Content-Type': 'application/json'
+          }
+        })
+      }
+    } catch(err) {
+      console.error("Failed to get product identification pref", err)
+    }
+
+    commit(types.USER_PRODUCT_IDENTIFICATION_PREF_UPDATED, productIdentificationPref)
+  },
+
+  /**
+   * Update product identification pref for the product store, only updates when the pref already exists
+   */
+  async setProductIdentificationPref({ commit, state, getters }, payload) {
+    const { id, value, productStoreId } = payload
+    const productIdentificationPref = JSON.parse(JSON.stringify(state.productIdentificationPref))
+
+    if(!productStoreId) {
+      commit(types.USER_PRODUCT_IDENTIFICATION_PREF_UPDATED, productIdentificationPref)
+      return
+    }
+
+    productIdentificationPref[id] = value
+
+    const headers = {
+      Authorization: 'Bearer ' + state.token,
+      'Content-Type': 'application/json'
+    }
+
+    let isSettingExists = false
+    try {
+      const resp = await client({
+        url: `admin/productStores/${productStoreId}/settings`,
+        method: "GET",
+        baseURL: getters.getMaargBaseUrl,
+        params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" },
+        headers
+      }) as any
+      if(resp.data[0]?.settingTypeEnumId) isSettingExists = true
+    } catch(err) {
+      console.error(err)
+    }
+
+    if(!isSettingExists) {
+      console.error("Failed to set identification pref: product store setting is missing")
+      return
+    }
+
+    try {
+      await client({
+        url: `admin/productStores/${productStoreId}/settings`,
+        method: "POST",
+        baseURL: getters.getMaargBaseUrl,
+        data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(productIdentificationPref) },
+        headers
+      })
+      commit(types.USER_PRODUCT_IDENTIFICATION_PREF_UPDATED, productIdentificationPref)
+    } catch(err) {
+      console.error("Failed to set identification pref", err)
+    }
+  },
+
+  /**
+   * Prepare product identifier options, static options along with the good identification types
+   */
+  async prepareProductIdentifierOptions({ commit, state, getters }) {
+    const staticOptions = [
+      { goodIdentificationTypeId: 'productId', description: 'Product ID' },
+      { goodIdentificationTypeId: 'groupId', description: 'Group ID' },
+      { goodIdentificationTypeId: 'groupName', description: 'Group Name' },
+      { goodIdentificationTypeId: 'internalName', description: 'Internal Name' },
+      { goodIdentificationTypeId: 'parentProductName', description: 'Parent Product Name' },
+      { goodIdentificationTypeId: 'primaryProductCategoryName', description: 'Primary Product Category Name' },
+      { goodIdentificationTypeId: 'title', description: 'Title' }
+    ]
+
+    let fetchedOptions = [] as any[]
+    try {
+      const resp = await client({
+        url: "oms/goodIdentificationTypes",
+        method: "GET",
+        baseURL: getters.getMaargBaseUrl,
+        params: { parentTypeId: "HC_GOOD_ID_TYPE", pageSize: 50 },
+        headers: {
+          Authorization: 'Bearer ' + state.token,
+          'Content-Type': 'application/json'
+        }
+      }) as any
+      fetchedOptions = resp.data || []
+    } catch(err) {
+      console.error("Failed to fetch good identification types", err)
+    }
+
+    commit(types.USER_PRODUCT_IDENTIFICATION_OPTIONS_UPDATED, [...staticOptions, ...fetchedOptions])
+  }
 
 }
 export default actions;

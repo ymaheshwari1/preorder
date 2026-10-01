@@ -9,4 +9,9 @@ export default interface UserState {
     currentOrderParking: Array<string>;
     omsRedirectionUrl: string;
     isMoquiOnly: boolean;
+    productIdentificationPref: {
+        primaryId: string;
+        secondaryId: string;
+    };
+    productIdentificationOptions: Array<any>;
 }

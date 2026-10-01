@@ -118,7 +118,7 @@ const fetchEnums = async(payload: any): Promise<any> => {
     url: "admin/enums",
     params: payload,
     method: "GET",
-    baseURL: "https://jm-uat.hotwax.io/rest/s1/",
+    baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
@@ -133,7 +133,7 @@ const fetchMaargFacilities = async (payload: any): Promise <any>  => {
   return apiClient({
     url: `/oms/facilities`,
     method: "GET",
-    baseURL: "https://jm-uat.hotwax.io/rest/s1/",
+    baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
@@ -152,7 +152,7 @@ const fetchStatusInfo = async(): Promise<any> => {
       statusTypeId: "FII_STATUS"
     },
     method: "GET",
-    baseURL: "https://jm-uat.hotwax.io/rest/s1/",
+    baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"

@@ -188,12 +188,20 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       isMoquiOnly: "user/isMoquiOnly",
+      productIdentificationPref: "user/getProductIdentificationPref",
+      productIdentificationOptions: "user/getProductIdentificationOptions",
       maargInstance: "user/getInstanceUrl",
       userProfile: 'user/getUserProfile',
       currentEComStore: 'user/getCurrentEComStore',
       currentOrderParking: 'user/getCurrentOrderParking',
       virtualFacilities: 'user/getVirtualFacilities'
     })
+  },
+  async ionViewWillEnter() {
+    if(this.isMoquiOnly) {
+      await this.store.dispatch("user/prepareProductIdentifierOptions")
+      await this.store.dispatch("user/fetchProductIdentificationPref", this.currentEComStore?.productStoreId)
+    }
   },
   methods: {
     logout: function() {
@@ -216,7 +224,11 @@ export default defineComponent({
         this.store.dispatch('user/setEcomStore', {
           'eComStore': this.userProfile.stores.find((store: any) => store.productStoreId == event.detail.value)
         })
+        if(this.isMoquiOnly) this.store.dispatch("user/fetchProductIdentificationPref", event.detail.value)
       }
+    },
+    setProductIdentificationPref(value: string, id: string) {
+      this.store.dispatch("user/setProductIdentificationPref", { id, value, productStoreId: this.currentEComStore?.productStoreId })
     },
     updateOrderParking(event: any) {
       if(event.detail.value && this.userProfile && this.currentOrderParking !== event.detail.value) {

@@ -20,7 +20,12 @@ const userModule: Module<UserState, RootState> = {
         registration: null,
       },
       omsRedirectionUrl: "",
-      isMoquiOnly: false
+      isMoquiOnly: false,
+      productIdentificationPref: {
+        primaryId: 'productId',
+        secondaryId: ''
+      },
+      productIdentificationOptions: []
     },
     getters,
     actions,

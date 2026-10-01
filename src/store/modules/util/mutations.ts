@@ -15,7 +15,7 @@ const mutations: MutationTree <UtilState> = {
     state.enums = payload;
   },
   [types.UTIL_FACILTIES_UPDATED](state, payload) {
-    state.facilities = payload;
+    state.facilities = { ...state.facilities, ...payload };
   }
 }
 export default mutations;

@@ -48,6 +48,12 @@ const getters: GetterTree <UserState, RootState> = {
     },
     isMoquiOnly(state) {
         return state.isMoquiOnly
+    },
+    getProductIdentificationPref(state) {
+        return state.productIdentificationPref
+    },
+    getProductIdentificationOptions(state) {
+        return state.productIdentificationOptions
     }
 }
 export default getters;

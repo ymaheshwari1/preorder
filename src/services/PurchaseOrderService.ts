@@ -1,7 +1,7 @@
 import { apiClient } from '@/adapter';
 import store from '@/store';
 
-const fetchFutureInventory = async (): Promise<any> => {
+const fetchFutureInventory = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -9,6 +9,7 @@ const fetchFutureInventory = async (): Promise<any> => {
     url: "oms/futureInventory",
     method: "GET",
     baseURL,
+    params,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"

@@ -20,24 +20,31 @@
           v-model="localQuery.keyword"
           v-on:keyup.enter="search()"
           @ionClear="localQuery.keyword = ''; search()">
-        </ion-searchbar>
+        </ion-searchbar> |
 
-        <!-- <ion-item lines="none">
-          <ion-icon slot="start" :icon="documentTextOutline" />
-          <ion-toggle label-placement="start" color="secondary" :checked="showOrderItems" @ionChange="() => showOrderItems = !showOrderItems">{{ $t("Show order items") }}</ion-toggle>
-        </ion-item> -->
+        <ion-item lines="none">
+          <ion-icon slot="start" :icon="swapVerticalOutline" />
+          <ion-select :label="$t('Sort by')" interface="popover" :value="sortBy" @ionChange="sortBy = $event.detail.value; search()">
+            <ion-select-option value="createdDate">{{ $t("Created date") }}</ion-select-option>
+            <ion-select-option value="promiseDate">{{ $t("Promise date") }}</ion-select-option>
+          </ion-select>
+        </ion-item> |
+
+        <ion-item lines="none">
+          <ion-icon slot="start" :icon="filterOutline" />
+          <ion-select :label="$t('Facility')" interface="popover" :value="facilityId" @ionChange="facilityId = $event.detail.value; search()">
+            <ion-select-option value="">{{ $t("All") }}</ion-select-option>
+            <ion-select-option v-for="id in Object.keys(facilities)" :key="id" :value="id">{{ getFacilityName(id) }}</ion-select-option>
+          </ion-select>
+        </ion-item>
       </ion-list>
-
-      <!-- <ion-item lines="none">
-        <ion-label>{{ Object.keys(orders).length }} {{ $t("purchase order lines") }}</ion-label>
-      </ion-item> -->
 
       <div v-if="isLoading" class="empty-state">
         <ion-spinner name="crescent" />
         <ion-label>{{ $t("Loading Purchase Orders") }}</ion-label>
       </div>
 
-      <ion-list v-else-if="!Object.keys(orders).length">
+      <ion-list v-else-if="!orders.length">
         <ion-item>
           <ion-label>
             <p>{{ $t("Search by purchase order ID, order name, product ID, status, or arrival date.") }}</p>
@@ -46,7 +53,7 @@
       </ion-list>
 
       <main v-else class="purchase-order-results">
-        <div v-for="(order, externalId) in orders" :key="externalId" @click="router.push(`/purchase-order-detail/${order.externalId}`)">
+        <div v-for="order in orders" :key="order.externalId" @click="router.push(`/purchase-order-detail/${order.externalId}`)">
           <section>
             <div class="list-item">
               <ion-item lines="none">
@@ -87,20 +94,6 @@
               </div>
             </div>
           </section>
-
-          <!-- <section v-if="showOrderItems">
-            <div class="list-item purchase-order-parent-row" v-for="item in order.items" :key="item">
-              <ion-item lines="none">
-                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl" @click.stop>
-                  <DxpShopifyImg :src="getProduct(item.productId)?.mainImageUrl" />
-                </ion-thumbnail>
-                <ion-label class="ion-text-wrap">
-                  <p class="overline">{{ getProduct(item.productId)?.sku || item.productId }}</p>
-                  {{ item.parentProductName ? item.parentProductName : item.productName }}
-                </ion-label>
-              </ion-item>
-            </div>
-          </section> -->
         </div>
       </main>
 
@@ -116,6 +109,7 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
@@ -126,6 +120,8 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonSearchbar,
+  IonSelect,
+  IonSelectOption,
   IonSpinner,
   IonTitle,
   IonToolbar
@@ -144,6 +140,7 @@ export default defineComponent({
     IonButtons,
     IonContent,
     IonHeader,
+    IonIcon,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonItem,
@@ -154,6 +151,8 @@ export default defineComponent({
     IonRefresher,
     IonRefresherContent,
     IonSearchbar,
+    IonSelect,
+    IonSelectOption,
     IonSpinner,
     IonTitle,
     IonToolbar
@@ -178,16 +177,19 @@ export default defineComponent({
         estimatedDeliveryDateFrom: '',
         estimatedDeliveryDateTo: ''
       },
+      facilityId: '',
       isLoading: false,
       isScrollingEnabled: false,
       showFilters: false,
       showOrderItems: true,
+      sortBy: 'createdDate',
       sortDirection: 'asc'
     }
   },
   computed: {
     ...mapGetters({
       orders: 'purchaseOrder/getList',
+      facilities: 'util/getFacilities',
       getFacilityName: 'util/getFacilityName',
       total: 'purchaseOrder/getListTotal',
       getProduct: 'product/getProduct',
@@ -220,7 +222,11 @@ export default defineComponent({
     },
     async search() {
       this.isLoading = true;
-      await this.store.dispatch("purchaseOrder/fetchFutureInventory");
+      await this.store.dispatch("purchaseOrder/fetchFutureInventory", {
+        orderByField: this.sortBy,
+        ...(this.localQuery.keyword.trim() && { externalId: this.localQuery.keyword.trim() }),
+        ...(this.facilityId && { facilityId: this.facilityId })
+      });
       this.isLoading = false;
     },
     async refresh(event: any) {

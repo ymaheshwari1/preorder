@@ -74,37 +74,37 @@ export default defineComponent({
     }
 
     const appPages = [
+      // {
+      //   title: "Orders",
+      //   url: "/orders",
+      //   iosIcon: pricetagsOutline,
+      //   mdIcon: pricetagsOutline,
+      //   meta: {
+      //     permissionId: "APP_ORDERS_VIEW"
+      //   }
+      // },
+      // {
+      //   title: "Products",
+      //   url: "/products",
+      //   childRoutes: ["/product-details/"],
+      //   iosIcon: shirtOutline,
+      //   mdIcon: shirtOutline,
+      //   meta: {
+      //     permissionId: "APP_PRODUCTS_VIEW"
+      //   }
+      // },
+      // {
+      //   title: "Audit",
+      //   url: "/audit",
+      //   childRoutes: ["/audit-product-details/"],
+      //   iosIcon: albumsOutline,
+      //   mdIcon: albumsOutline,
+      //   meta: {
+      //     permissionId: "APP_AUDIT_VIEW"
+      //   }
+      // },
       {
-        title: "Orders",
-        url: "/orders",
-        iosIcon: pricetagsOutline,
-        mdIcon: pricetagsOutline,
-        meta: {
-          permissionId: "APP_ORDERS_VIEW"
-        }
-      },
-      {
-        title: "Products",
-        url: "/products",
-        childRoutes: ["/product-details/"],
-        iosIcon: shirtOutline,
-        mdIcon: shirtOutline,
-        meta: {
-          permissionId: "APP_PRODUCTS_VIEW"
-        }
-      },
-      {
-        title: "Audit",
-        url: "/audit",
-        childRoutes: ["/audit-product-details/"],
-        iosIcon: albumsOutline,
-        mdIcon: albumsOutline,
-        meta: {
-          permissionId: "APP_AUDIT_VIEW"
-        }
-      },
-      {
-        title: "PurchaseOrders",
+        title: "Purchase Orders",
         url: "/purchase-orders",
         iosIcon: receiptOutline,
         mdIcon: receiptOutline,

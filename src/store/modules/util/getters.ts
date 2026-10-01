@@ -12,6 +12,7 @@ const getters: GetterTree <UtilState, RootState> = {
   getEnumDetail: (state) => (enumId: string) => {
     return state.enums[enumId] ? state.enums[enumId] : "-";
   },
+  getFacilities: (state) => state.facilities,
   getFacilityName: (state) => (facilityId: string) => {
     return state.facilities[facilityId] ? state.facilities[facilityId]?.facilityName : facilityId || "-";
   }

@@ -6,14 +6,15 @@ import { PurchaseOrderService } from '@/services/PurchaseOrderService'
 import store from '@/store'
 
 const actions: ActionTree<PurchaseOrderState, RootState> = {
-  async fetchFutureInventory({ commit }) {
+  async fetchFutureInventory({ commit }, params) {
     const productIds: Array<string> = [];
     const facilityIds: Array<string> = [];
+    const orders: any[] = [];
 
     try {
-      const resp = await PurchaseOrderService.fetchFutureInventory();
-      if(resp.data?.length) {
-        const orders = resp.data.reduce((ords: any[], order: any) => {
+      const resp = await PurchaseOrderService.fetchFutureInventory(params);
+      if(resp.data?.futureInventoryItems?.length) {
+        resp.data.futureInventoryItems.reduce((ords: any, order: any) => {
           if(!ords[order.externalId]) {
             ords[order.externalId] = {
               externalId: order.externalId,
@@ -25,6 +26,7 @@ const actions: ActionTree<PurchaseOrderState, RootState> = {
               shipments: [],
               items: []
             }
+            orders.push(ords[order.externalId])
           }
           if(order.shipmentExternalId) {
             ords[order.externalId]["shipments"].push(order)
@@ -33,17 +35,17 @@ const actions: ActionTree<PurchaseOrderState, RootState> = {
           }
 
           productIds.push(order.productId)
-          facilityIds.push(order.facilityId)
+          if(order.facilityId) facilityIds.push(order.facilityId)
           return ords
         }, {})
 
         store.dispatch("product/fetchProductsMaarg", { productIds })
         store.dispatch("util/fetchFacilityDetails", [...new Set(facilityIds)])
-        commit(types.PURCHASEORDER_LIST_UPDATED, { orders, total: resp.data.length })
       }
     } catch(err) {
       console.error("Failed to fetch future inventory details", err)
     }
+    commit(types.PURCHASEORDER_LIST_UPDATED, { orders, total: orders.length })
   },
 
   async fetchFutureInventoryDetails({ commit }, id) {

@@ -24,12 +24,15 @@
           </ion-label>
           <ion-label slot="end">{{ getFacilityName(order.items?.[0].facilityId) }}</ion-label>
         </ion-item>
-        <ion-item lines="none" v-if="order.orderIds?.length">
-          <ion-chip v-for="orderId in order.orderIds" :key="orderId">
-            {{ orderId }}
-            <ion-icon :icon="openOutline"></ion-icon>
-          </ion-chip>
-        </ion-item>
+        <template v-if="order.orderIds?.length">
+          <ion-label class="ion-margin-start">{{ "Sales Orders" }}: {{ order.orderIds.length }}</ion-label>
+          <ion-item lines="none">
+            <ion-chip v-for="orderId in order.orderIds" :key="orderId" @click="openOrderDetails(orderId)">
+              {{ orderId }}
+              <ion-icon :icon="openOutline"></ion-icon>
+            </ion-chip>
+          </ion-item>
+        </template>
 
         <main class="purchase-order-items">
           <ion-item class="purchase-order-items-header" lines="none">
@@ -46,40 +49,40 @@
 
           <ion-accordion-group>
             <ion-accordion :value="row.futureInventoryItemId" v-for="row in order.items" :key="row.id">
-              <ion-item slot="header">
-              <div class="list-item purchase-order-item-summary-row">
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <DxpShopifyImg :src="getProduct(row.productId)?.mainImageUrl" size="small" />
-                  </ion-thumbnail>
-                  <ion-label>
-                    <p class="overline">{{ getProduct(row.productId).internalName }}</p>
-                    <h2>{{ getProduct(row.productId).productName || row.productId }}</h2>
-                    <p>{{ row.futureInventoryItemId }}</p>
-                  </ion-label>
-                </ion-item>
-                <div class="tablet ion-text-center">
-                  <ion-label>
-                    {{ row.availableToPromiseTotal }}
-                    <p>{{ $t("quantity") }}</p>
-                  </ion-label>
+              <ion-item slot="header" color="light">
+                <div class="list-item purchase-order-item-summary-row">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <DxpShopifyImg :src="getProduct(row.productId)?.mainImageUrl" size="small" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getProduct(row.productId).internalName }}</p>
+                      <h2>{{ getProduct(row.productId).productName || row.productId }}</h2>
+                      <p>{{ row.futureInventoryItemId }}</p>
+                    </ion-label>
+                  </ion-item>
+                  <div class="tablet ion-text-center">
+                    <ion-label>
+                      {{ row.availableToPromiseTotal }}
+                      <p>{{ $t("quantity") }}</p>
+                    </ion-label>
+                  </div>
+                  <div class="tablet ion-text-center">
+                    <ion-label>
+                      {{ formatDate(row.promiseDate) }}
+                      <p>{{ $t("promise date") }}</p>
+                    </ion-label>
+                  </div>
+                  <div class="tablet ion-text-center">
+                    <ion-label>
+                      {{ getEnum(row.futureInventoryItemTypeId)?.description }}
+                      <p>{{ $t("category") }}</p>
+                    </ion-label>
+                  </div>
+                  <div class="tablet ion-text-center">
+                    <ion-badge>{{ getStatusDesc(row.statusId) }}</ion-badge>
+                  </div>
                 </div>
-                <div class="tablet ion-text-center">
-                  <ion-label>
-                    {{ formatDate(row.promiseDate) }}
-                    <p>{{ $t("promise date") }}</p>
-                  </ion-label>
-                </div>
-                <div class="tablet ion-text-center">
-                  <ion-label>
-                    {{ getEnum(row.futureInventoryItemTypeId)?.description }}
-                    <p>{{ $t("category") }}</p>
-                  </ion-label>
-                </div>
-                <div class="tablet ion-text-center">
-                  <ion-badge>{{ getStatusDesc(row.statusId) }}</ion-badge>
-                </div>
-              </div>
               </ion-item>
 
               <div slot="content">
@@ -147,7 +150,7 @@
 
           <ion-accordion-group>
             <ion-accordion :value="row.futureInventoryItemId" v-for="row in order.shipments" :key="row.id">
-              <ion-item slot="header">
+              <ion-item slot="header" color="light">
                 <div class="list-item purchase-order-item-summary-row">
                   <ion-item lines="none">
                     <ion-label>
@@ -155,6 +158,7 @@
                       <p>{{ row.futureInventoryItemId }}</p>
                     </ion-label>
                   </ion-item>
+                  <div class="tablet ion-text-center"></div>
                   <div class="tablet ion-text-center"></div>
                   <div class="tablet ion-text-center"></div>
                   <div class="tablet ion-text-center">
@@ -301,6 +305,9 @@ export default defineComponent({
       const sqlDate = DateTime.fromSQL(stringValue);
       const parsedDate = isoDate.isValid ? isoDate : sqlDate;
       return parsedDate.isValid ? parsedDate : null;
+    },
+    openOrderDetails(orderId: string) {
+      window.location.href = `https://order-manager.hotwax.io/orders/${orderId}`
     }
   },
   setup() {
