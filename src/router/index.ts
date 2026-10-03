@@ -45,7 +45,7 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
    {
     path: '/',
-    redirect: '/purchase-orders'
+    redirect: store.state.user.isMoquiOnly ? '/purchase-orders' : '/orders'
   },
   {
     path: '/login',
