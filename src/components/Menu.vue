@@ -70,54 +70,62 @@ export default defineComponent({
     const router = useRouter();
 
     const getValidMenuItems = (appPages: any) => {
-      return appPages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || hasPermission(appPage.meta.permissionId));
+      return appPages.filter((appPage: any) => {
+        // In case of moqui only setup, displaying only the moqui based pages
+        if(store.state.user.isMoquiOnly && !appPage.meta?.isMoquiBasedPage) return false;
+        return !appPage.meta?.permissionId || hasPermission(appPage.meta.permissionId);
+      });
     }
 
     const appPages = [
-      // {
-      //   title: "Orders",
-      //   url: "/orders",
-      //   iosIcon: pricetagsOutline,
-      //   mdIcon: pricetagsOutline,
-      //   meta: {
-      //     permissionId: "APP_ORDERS_VIEW"
-      //   }
-      // },
-      // {
-      //   title: "Products",
-      //   url: "/products",
-      //   childRoutes: ["/product-details/"],
-      //   iosIcon: shirtOutline,
-      //   mdIcon: shirtOutline,
-      //   meta: {
-      //     permissionId: "APP_PRODUCTS_VIEW"
-      //   }
-      // },
-      // {
-      //   title: "Audit",
-      //   url: "/audit",
-      //   childRoutes: ["/audit-product-details/"],
-      //   iosIcon: albumsOutline,
-      //   mdIcon: albumsOutline,
-      //   meta: {
-      //     permissionId: "APP_AUDIT_VIEW"
-      //   }
-      // },
+      {
+        title: "Orders",
+        url: "/orders",
+        iosIcon: pricetagsOutline,
+        mdIcon: pricetagsOutline,
+        meta: {
+          permissionId: "APP_ORDERS_VIEW"
+        }
+      },
+      {
+        title: "Products",
+        url: "/products",
+        childRoutes: ["/product-details/"],
+        iosIcon: shirtOutline,
+        mdIcon: shirtOutline,
+        meta: {
+          permissionId: "APP_PRODUCTS_VIEW"
+        }
+      },
+      {
+        title: "Audit",
+        url: "/audit",
+        childRoutes: ["/audit-product-details/"],
+        iosIcon: albumsOutline,
+        mdIcon: albumsOutline,
+        meta: {
+          permissionId: "APP_AUDIT_VIEW"
+        }
+      },
       {
         title: "Purchase Orders",
         url: "/purchase-orders",
         iosIcon: receiptOutline,
         mdIcon: receiptOutline,
         meta: {
-          permissionId: "APP_PURCHASE_ORDER_VIEW"
+          permissionId: "APP_PURCHASE_ORDER_VIEW",
+          isMoquiBasedPage: true
         }
       },
       {
         title: "Settings",
         url: "/settings",
         iosIcon: settingsOutline,
-        mdIcon: settingsOutline
-      },
+        mdIcon: settingsOutline,
+        meta: {
+          isMoquiBasedPage: true
+        }
+      }
     ];
 
     const selectedIndex = computed(() => {
