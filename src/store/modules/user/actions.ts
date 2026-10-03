@@ -244,15 +244,23 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Set user's selected Ecom store
    */
-    async setEcomStore({ commit }, payload) {
+    async setEcomStore({ commit, state }, payload) {
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
       // Reset all the current queries
       this.dispatch("product/resetProductList")
       this.dispatch("order/resetOrderQuery")
-      await UserService.setUserPreference({
-        'userPrefTypeId': 'SELECTED_BRAND',
-        'userPrefValue': payload.eComStore.productStoreId
-      });
+
+      if(state.isMoquiOnly) {
+        UserMaargService.setProductStorePreference({
+          'userId': (state.current as any).userId,
+          'productStoreId': payload.eComStore.productStoreId
+        })
+      } else {
+        await UserService.setUserPreference({
+          'userPrefTypeId': 'SELECTED_BRAND',
+          'userPrefValue': payload.eComStore.productStoreId
+        });
+      }
 
       await useUserStore().setEComStorePreference(payload.eComStore);
     

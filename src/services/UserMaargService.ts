@@ -56,6 +56,31 @@ const getEComStores = async (token: any): Promise<any> => {
   }
 }
 
+const setProductStorePreference = async (payload: any) => {
+  const token = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  try {
+    await apiClient({
+      url: "admin/user/preferences",
+      method: "PUT",
+      data: {
+        userId: payload.userId,
+        preferenceKey: 'SELECTED_BRAND',
+        preferenceValue: payload.productStoreId,
+      },
+      baseURL,
+      headers: {
+        Authorization:  'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('error', error)
+  }
+  return;
+}
+
 const getPreferredStore = async (userId: string, token: string) => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
   try {
@@ -128,5 +153,6 @@ export const UserMaargService = {
   getEComStores,
   getPreferredStore,
   getUserProfile,
-  getUserPermissions
+  getUserPermissions,
+  setProductStorePreference
 }

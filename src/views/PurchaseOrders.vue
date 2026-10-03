@@ -25,7 +25,7 @@
         <ion-item lines="none">
           <ion-icon slot="start" :icon="swapVerticalOutline" />
           <ion-select :label="$t('Sort by')" interface="popover" :value="sortBy" @ionChange="sortBy = $event.detail.value; search()">
-            <ion-select-option value="createdDate">{{ $t("Created date") }}</ion-select-option>
+            <ion-select-option value="createdStamp">{{ $t("Created date") }}</ion-select-option>
             <ion-select-option value="promiseDate">{{ $t("Promise date") }}</ion-select-option>
           </ion-select>
         </ion-item> |
@@ -47,7 +47,7 @@
       <ion-list v-else-if="!orders.length">
         <ion-item>
           <ion-label>
-            <p>{{ $t("Search by purchase order ID, order name, product ID, status, or arrival date.") }}</p>
+            <p>{{ $t("Active purchase orders not found, try clearing filters or changing product store") }}</p>
           </ion-label>
         </ion-item>
       </ion-list>
@@ -182,7 +182,7 @@ export default defineComponent({
       isScrollingEnabled: false,
       showFilters: false,
       showOrderItems: true,
-      sortBy: 'createdDate',
+      sortBy: 'createdStamp',
       sortDirection: 'asc'
     }
   },
@@ -193,6 +193,7 @@ export default defineComponent({
       getFacilityName: 'util/getFacilityName',
       total: 'purchaseOrder/getListTotal',
       getProduct: 'product/getProduct',
+      currentEComStore: 'user/getCurrentEComStore',
     }),
   },
   ionViewWillEnter() {
@@ -225,7 +226,8 @@ export default defineComponent({
       await this.store.dispatch("purchaseOrder/fetchFutureInventory", {
         orderByField: this.sortBy,
         ...(this.localQuery.keyword.trim() && { externalId: this.localQuery.keyword.trim() }),
-        ...(this.facilityId && { facilityId: this.facilityId })
+        ...(this.facilityId && { facilityId: this.facilityId }),
+        productStoreId: this.currentEComStore.productStoreId
       });
       this.isLoading = false;
     },
