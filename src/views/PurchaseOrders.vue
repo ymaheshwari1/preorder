@@ -53,7 +53,7 @@
       </ion-list>
 
       <main v-else class="purchase-order-results">
-        <div v-for="order in orders" :key="order.orderId" @click="router.push(`/purchase-order-detail/${order.orderExternalId}`)">
+        <div v-for="order in orders" :key="order.orderId" @click="router.push(`/purchase-order-detail/${order.orderId}`)">
           <section>
             <div class="list-item">
               <ion-item lines="none">
@@ -80,7 +80,7 @@
                   <p>{{ $t("Order date") }}</p>
                 </ion-label>
               </div>
-              <ion-badge>{{ order.orderStatusDesc || order.orderStatusId }}</ion-badge>
+              <ion-badge :color="getStatusColor(order.orderStatusDesc)">{{ order.orderStatusDesc || order.orderStatusId }}</ion-badge>
             </div>
           </section>
         </div>
@@ -123,6 +123,7 @@ import { mapGetters } from "vuex";
 import { useRouter } from "vue-router";
 import { useStore } from "@/store";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { getStatusColor } from "@/utils";
 
 export default defineComponent({
   name: "purchase-orders",
@@ -175,7 +176,12 @@ export default defineComponent({
       showFilters: false,
       showOrderItems: true,
       sortBy: '-orderDate',
-      sortDirection: 'asc'
+      sortDirection: 'asc',
+      statusColor: {
+        "Approved": "primary",
+        "Completed": "success",
+        "Cancelled": "danger"
+      } as Record<string, string>
     }
   },
   computed: {
@@ -277,7 +283,8 @@ export default defineComponent({
       productIdentificationPref,
       router,
       store,
-      swapVerticalOutline
+      swapVerticalOutline,
+      getStatusColor
     };
   }
 });

@@ -49,7 +49,6 @@ const actions: ActionTree<PurchaseOrderState, RootState> = {
   },
 
   async fetchPurchaseOrders({ commit, state }, params) {
-    // Appending the orders to the existing list when fetching the next page
     let orders: any[] = params.pageIndex ? JSON.parse(JSON.stringify(state.list.orders)) : [];
     let total = params.pageIndex ? state.list.total : 0;
 
@@ -68,18 +67,37 @@ const actions: ActionTree<PurchaseOrderState, RootState> = {
     commit(types.PURCHASEORDER_LIST_UPDATED, { orders, total })
   },
 
-  async fetchFutureInventoryDetails({ commit }, id) {
-    try {
-      const resp = await PurchaseOrderService.fetchFutureInventoryDetail(id);
-      if(resp.data?.futureInventoryItemGroups?.length) {
-        const productIds = resp.data.futureInventoryItemGroups[0].items.map((item: any) => item.productId)
-        store.dispatch("product/fetchMaargProducts", {productIds})
+  async fetchFutureInventoryDetails({ commit }, orderId) {
+    let order = {} as any;
 
-        commit(types.PURCHASEORDER_CURRENT_UPDATED, resp.data.futureInventoryItemGroups[0])
+    try {
+      const resp = await PurchaseOrderService.fetchPurchaseOrder(orderId);
+      const { items: orderItems = [], ...orderHeader } = resp.data?.order || {};
+      order = { ...orderHeader, shipments: [] }
+
+      let fiiGroup = {} as any;
+      if(order.externalId) {
+        const fiiResp = await PurchaseOrderService.fetchFutureInventoryDetail(order.externalId);
+        fiiGroup = fiiResp.data?.futureInventoryItemGroups?.[0] || {};
       }
+
+      // PO items are the base list, merging the FII item linked to the PO item, matched on poItemSeqId and on productId when poItemSeqId is missing
+      const fiiItems = [...(fiiGroup.items || [])];
+      const items = orderItems.map((orderItem: any) => {
+        const index = fiiItems.findIndex((fii: any) => fii.poItemSeqId ? fii.poItemSeqId === orderItem.orderItemSeqId : fii.productId === orderItem.productId);
+        const fiiItem = index > -1 ? fiiItems.splice(index, 1)[0] : {};
+        return { ...orderItem, itemStatusId: orderItem.statusId, ...fiiItem };
+      });
+
+      // Keeping the FII items not linked to any PO item, so that no record is missed
+      order = { ...order, ...fiiGroup, items: [...items, ...fiiItems] }
+
+      const productIds = order.items.map((item: any) => item.productId).filter(Boolean)
+      if(productIds.length) store.dispatch("product/fetchMaargProducts", { productIds: [...new Set(productIds)] })
     } catch(err) {
-      console.error("Failed to fetch future inventory details", err)
+      console.error("Failed to fetch purchase order details", err)
     }
+    commit(types.PURCHASEORDER_CURRENT_UPDATED, order)
   }
 }
 

@@ -20,9 +20,15 @@
           <ion-icon slot="start" :icon="ticketOutline" />
           <ion-label>
             <h1>{{ order.externalId }}</h1>
-            <p>{{ order.items?.[0].poId }}</p>
+            <p>{{ order.orderId }}</p>
           </ion-label>
-          <ion-label slot="end">{{ getFacilityName(order.items?.[0].facilityId) }}</ion-label>
+          <div slot="end">
+            <ion-note>{{ formatDate(order.orderDate) }}</ion-note>
+            <ion-label>
+              {{ getFacilityName(order.originFacilityId) }}
+            </ion-label>
+            <ion-badge :color="getStatusColor(order.orderStatusDesc)">{{ order.orderStatusDesc }}</ion-badge>
+          </div>
         </ion-item>
         <template v-if="order.orderIds?.length">
           <ion-label class="ion-margin-start">{{ "Sales Orders" }}: {{ order.orderIds.length }}</ion-label>
@@ -42,8 +48,8 @@
             </ion-label>
           </ion-item>
           <ion-list v-if="!order.items?.length">
-            <ion-item>
-              <ion-label>{{ $t("No results found") }}</ion-label>
+            <ion-item class="ion-text-center" lines="none">
+              <ion-label>{{ $t("No items found") }}</ion-label>
             </ion-item>
           </ion-list>
 
@@ -63,8 +69,8 @@
                   </ion-item>
                   <div class="tablet ion-text-center">
                     <ion-label>
-                      {{ row.availableToPromiseTotal }}
-                      <p>{{ $t("quantity") }}</p>
+                      {{ row.quantity || "-" }}/{{ row.availableToPromiseTotal || "-" }}
+                      <p>{{ $t("quantity") }}/{{ $t("ATP") }}</p>
                     </ion-label>
                   </div>
                   <div class="tablet ion-text-center">
@@ -75,7 +81,7 @@
                   </div>
                   <div class="tablet ion-text-center">
                     <ion-label>
-                      {{ getEnum(row.futureInventoryItemTypeId)?.description }}
+                      {{ getEnum(row.futureInventoryItemTypeId)?.description || "-" }}
                       <p>{{ $t("category") }}</p>
                     </ion-label>
                   </div>
@@ -88,11 +94,9 @@
               <div slot="content">
                 <div v-for="detail in row.details" :key="detail.id" class="list-item ion-margin-start purchase-order-item-summary-row">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(row.productId)?.mainImageUrl" size="small" />
-                    </ion-thumbnail>
                     <ion-label>
                       <h2>{{ detail.futureInventoryItemDetailId }}</h2>
+                      <p>{{ detail.poItemSeqId }}</p>
                     </ion-label>
                   </ion-item>
                   <div class="tablet ion-text-center">
@@ -212,35 +216,15 @@
 </template>
 
 <script lang="ts">
-import {
-  IonAccordion,
-  IonAccordionGroup,
-  IonBackButton,
-  IonBadge,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonPage,
-  IonSpinner,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar
-} from "@ionic/vue";
-import {
-  openOutline,
-  shirtOutline,
-  ticketOutline
-} from "ionicons/icons";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar } from "@ionic/vue";
+import { openOutline, shirtOutline, ticketOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
 import { defineComponent } from "vue";
 import { mapGetters } from "vuex";
 import { useRoute, useRouter } from "vue-router";
 import { useStore } from "@/store";
 import { DxpShopifyImg } from "@hotwax/dxp-components";
+import { getStatusColor } from "@/utils";
 
 export default defineComponent({
   name: "purchase-order-detail",
@@ -320,7 +304,8 @@ export default defineComponent({
       router,
       shirtOutline,
       store,
-      ticketOutline
+      ticketOutline,
+      getStatusColor
     };
   }
 });

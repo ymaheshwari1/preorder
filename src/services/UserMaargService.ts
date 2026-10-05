@@ -98,7 +98,7 @@ const getPreferredStore = async (userId: string, token: string) => {
         'Content-Type': 'application/json'
       }
     }) as any;
-    return preferredStoreResp.data
+    return preferredStoreResp.data?.[0]?.preferenceValue || ""
   } catch (err) {
     console.error('Favourite product store not found', err)
     return {}

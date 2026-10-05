@@ -33,6 +33,21 @@ const fetchFutureInventory = async (params: any): Promise<any> => {
   });
 }
 
+const fetchPurchaseOrder = async (orderId: string): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `oms/purchaseOrders/${orderId}`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 const fetchFutureInventoryDetail = async(id: string): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -71,5 +86,6 @@ export const PurchaseOrderService = {
   fetchFutureInventory,
   fetchFutureInventoryDetail,
   fetchProducts,
+  fetchPurchaseOrder,
   fetchPurchaseOrders
 }

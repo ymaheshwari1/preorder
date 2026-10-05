@@ -99,12 +99,12 @@
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-secondary-id-item">
             <ion-select :label="$t('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')" data-testid="settings-secondary-id-select">
               <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
-              <!-- <ion-select-option value="">{{ "None" }}</ion-select-option> -->
+              <ion-select-option value="">{{ "None" }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
 
-        <ion-card>
+        <ion-card v-if="!isMoquiOnly">
           <ion-card-header>
             <ion-card-title>
               {{ $t("Order parking") }}
