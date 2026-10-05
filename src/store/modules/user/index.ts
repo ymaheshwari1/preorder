@@ -25,6 +25,7 @@ const userModule: Module<UserState, RootState> = {
         primaryId: 'productId',
         secondaryId: ''
       },
+      productStoreFacilities: [],
       productIdentificationOptions: []
     },
     getters,

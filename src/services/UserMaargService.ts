@@ -148,8 +148,32 @@ const getUserProfile = async (token: any): Promise<any> => {
   }
 }
 
+const fetchProductStoreFacilities = async (productStoreId: string): Promise<any> => {
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const token = store.getters['user/getUserToken'];
+
+  let productStoreFacilities = [];
+
+  try {
+    const resp = await apiClient({
+      url: `oms/productStores/${productStoreId}/facilities`,
+      method: "get",
+      baseURL,
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+    productStoreFacilities = resp.data
+  } catch (error: any) {
+    productStoreFacilities = []
+  }
+  return productStoreFacilities;
+}
+
 export const UserMaargService = {
   fetchLoginOptions,
+  fetchProductStoreFacilities,
   getEComStores,
   getPreferredStore,
   getUserProfile,

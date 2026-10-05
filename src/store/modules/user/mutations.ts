@@ -50,5 +50,8 @@ const mutations: MutationTree <UserState> = {
     [types.USER_PRODUCT_IDENTIFICATION_OPTIONS_UPDATED](state, payload) {
         state.productIdentificationOptions = payload;
     },
+    [types.USER_PRODUCT_STORE_FACILITIES_UPDATED](state, payload) {
+        state.productStoreFacilities = payload;
+    },
 }
 export default mutations;

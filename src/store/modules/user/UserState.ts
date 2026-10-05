@@ -13,5 +13,6 @@ export default interface UserState {
         primaryId: string;
         secondaryId: string;
     };
+    productStoreFacilities: any;
     productIdentificationOptions: Array<any>;
 }

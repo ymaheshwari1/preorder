@@ -54,6 +54,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getProductIdentificationOptions(state) {
         return state.productIdentificationOptions
+    },
+    getProductStoreFacilities(state) {
+        return state.productStoreFacilities
     }
 }
 export default getters;

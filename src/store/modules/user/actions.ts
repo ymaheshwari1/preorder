@@ -156,20 +156,11 @@ const actions: ActionTree<UserState, RootState> = {
         updateToken(token);
 
         useUserStore().currentEComStore = preferredStore
-        // dispatch("setEcomStore", { eComStore: preferredStore })
-        // await useUserStore().setEComStorePreference(preferredStore)
-
-        // Get product identification from api using dxp-component
-        // await useProductIdentificationStore().getIdentificationPref(preferredStoreId)
-        //   .catch((error) => console.error(error));
+        dispatch("setEcomStore", { eComStore: preferredStore })
+        await useUserStore().setEComStorePreference(preferredStore)
 
         // Get product identification pref from moqui
         await dispatch("fetchProductIdentificationPref", preferredStore?.productStoreId)
-
-        setPermissions(appPermissions);
-        if (userProfile.userTimeZone) {
-          Settings.defaultZone = userProfile.userTimeZone;
-        }
       }
     } catch (err: any) {
       showToast(translate('Something went wrong'));
@@ -241,10 +232,15 @@ const actions: ActionTree<UserState, RootState> = {
     Settings.defaultZone = current.userTimeZone;
   },
 
+  async fetchFacilities({ commit, state }) {
+    const facilities = await UserMaargService.fetchProductStoreFacilities((state.currentEComStore as any).productStoreId);
+    commit(types.USER_PRODUCT_STORE_FACILITIES_UPDATED, facilities)
+  },
+
   /**
    * Set user's selected Ecom store
    */
-    async setEcomStore({ commit, state }, payload) {
+    async setEcomStore({ commit, dispatch, state }, payload) {
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
       // Reset all the current queries
       this.dispatch("product/resetProductList")
@@ -255,18 +251,18 @@ const actions: ActionTree<UserState, RootState> = {
           'userId': (state.current as any).userId,
           'productStoreId': payload.eComStore.productStoreId
         })
+        await dispatch("fetchFacilities")
+        await dispatch("fetchProductIdentificationPref", payload.eComStore.productStoreId)
       } else {
         await UserService.setUserPreference({
           'userPrefTypeId': 'SELECTED_BRAND',
           'userPrefValue': payload.eComStore.productStoreId
         });
+        await useUserStore().setEComStorePreference(payload.eComStore);
+        // Get product identification from api using dxp-component
+        await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
+          .catch((error) => console.error(error));
       }
-
-      await useUserStore().setEComStorePreference(payload.eComStore);
-    
-      // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
-        .catch((error) => console.error(error));
     },
 
   /**
@@ -387,12 +383,6 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     productIdentificationPref[id] = value
-
-    const headers = {
-      Authorization: 'Bearer ' + state.token,
-      'Content-Type': 'application/json'
-    }
-
     let isSettingExists = false
     try {
       const resp = await client({
@@ -400,7 +390,10 @@ const actions: ActionTree<UserState, RootState> = {
         method: "GET",
         baseURL: getters.getMaargBaseUrl,
         params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" },
-        headers
+        headers: {
+          Authorization: 'Bearer ' + state.token,
+          'Content-Type': 'application/json'
+        }
       }) as any
       if(resp.data[0]?.settingTypeEnumId) isSettingExists = true
     } catch(err) {
@@ -418,7 +411,10 @@ const actions: ActionTree<UserState, RootState> = {
         method: "POST",
         baseURL: getters.getMaargBaseUrl,
         data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(productIdentificationPref) },
-        headers
+        headers: {
+          Authorization: 'Bearer ' + state.token,
+          'Content-Type': 'application/json'
+        }
       })
       commit(types.USER_PRODUCT_IDENTIFICATION_PREF_UPDATED, productIdentificationPref)
     } catch(err) {
