@@ -1,6 +1,22 @@
 import { apiClient } from '@/adapter';
 import store from '@/store';
 
+const fetchPurchaseOrders = async (params: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: "oms/purchaseOrders",
+    method: "GET",
+    baseURL,
+    params,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 const fetchFutureInventory = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -54,5 +70,6 @@ const fetchProducts = async(payload: any): Promise<any> => {
 export const PurchaseOrderService = {
   fetchFutureInventory,
   fetchFutureInventoryDetail,
-  fetchProducts
+  fetchProducts,
+  fetchPurchaseOrders
 }

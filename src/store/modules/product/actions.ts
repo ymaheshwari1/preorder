@@ -48,7 +48,7 @@ const actions: ActionTree<ProductState, RootState> = {
     return cachedProducts;
   },
 
-  async fetchProductsMaarg({commit, state}, { productIds }) {
+  async fetchMaargProducts({commit, state}, { productIds }) {
     const cachedProducts = JSON.parse(JSON.stringify(state.cached));
     const cachedProductIds = Object.keys(state.cached);
     const productIdFilter= productIds.reduce((filter: string, productId: any) => {

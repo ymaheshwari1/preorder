@@ -39,7 +39,7 @@ const actions: ActionTree<PurchaseOrderState, RootState> = {
           return ords
         }, {})
 
-        store.dispatch("product/fetchProductsMaarg", { productIds })
+        store.dispatch("product/fetchMaargProducts", { productIds })
         store.dispatch("util/fetchFacilityDetails", [...new Set(facilityIds)])
       }
     } catch(err) {
@@ -48,12 +48,32 @@ const actions: ActionTree<PurchaseOrderState, RootState> = {
     commit(types.PURCHASEORDER_LIST_UPDATED, { orders, total: orders.length })
   },
 
+  async fetchPurchaseOrders({ commit, state }, params) {
+    // Appending the orders to the existing list when fetching the next page
+    let orders: any[] = params.pageIndex ? JSON.parse(JSON.stringify(state.list.orders)) : [];
+    let total = params.pageIndex ? state.list.total : 0;
+
+    try {
+      const resp = await PurchaseOrderService.fetchPurchaseOrders(params);
+      if(resp.data?.orders?.length) {
+        orders = orders.concat(resp.data.orders)
+        total = resp.data.totalOrdersCount
+
+        const facilityIds = resp.data.orders.map((order: any) => order.facilityId).filter(Boolean)
+        store.dispatch("util/fetchFacilityDetails", [...new Set(facilityIds)])
+      }
+    } catch(err) {
+      console.error("Failed to fetch purchase orders", err)
+    }
+    commit(types.PURCHASEORDER_LIST_UPDATED, { orders, total })
+  },
+
   async fetchFutureInventoryDetails({ commit }, id) {
     try {
       const resp = await PurchaseOrderService.fetchFutureInventoryDetail(id);
       if(resp.data?.futureInventoryItemGroups?.length) {
         const productIds = resp.data.futureInventoryItemGroups[0].items.map((item: any) => item.productId)
-        store.dispatch("product/fetchProductsMaarg", {productIds})
+        store.dispatch("product/fetchMaargProducts", {productIds})
 
         commit(types.PURCHASEORDER_CURRENT_UPDATED, resp.data.futureInventoryItemGroups[0])
       }
