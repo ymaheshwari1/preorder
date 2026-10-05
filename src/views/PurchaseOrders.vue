@@ -25,8 +25,8 @@
         <ion-item lines="none">
           <ion-icon slot="start" :icon="swapVerticalOutline" />
           <ion-select :label="$t('Sort by')" interface="popover" :value="sortBy" @ionChange="sortBy = $event.detail.value; search()">
-            <ion-select-option value="createdStamp">{{ $t("Created date") }}</ion-select-option>
-            <ion-select-option value="promiseDate">{{ $t("Promise date") }}</ion-select-option>
+            <ion-select-option value="-orderDate">{{ $t("Newest first") }}</ion-select-option>
+            <ion-select-option value="orderDate">{{ $t("Oldest first") }}</ion-select-option>
           </ion-select>
         </ion-item> |
 
@@ -53,13 +53,13 @@
       </ion-list>
 
       <main v-else class="purchase-order-results">
-        <div v-for="order in orders" :key="order.externalId" @click="router.push(`/purchase-order-detail/${order.externalId}`)">
+        <div v-for="order in orders" :key="order.orderId" @click="router.push(`/purchase-order-detail/${order.orderExternalId}`)">
           <section>
             <div class="list-item">
               <ion-item lines="none">
                 <ion-label>
-                  <strong>{{ order.externalId }}</strong>
-                  <p>{{ order.poId }}</p>
+                  <strong>{{ order.orderExternalId || order.orderName }}</strong>
+                  <p>{{ order.orderId }}</p>
                 </ion-label>
               </ion-item>
               <div class="tablet ion-text-center">
@@ -70,28 +70,17 @@
               </div>
               <div class="tablet ion-text-center">
                 <ion-label>
-                  {{ formatDate(order.promiseDate) }}
-                  <p>{{ $t("Promise Date") }}</p>
+                  {{ formatDate(order.estimatedDeliveryDate) }}
+                  <p>{{ $t("Promise date") }}</p>
                 </ion-label>
               </div>
               <div class="tablet ion-text-center">
                 <ion-label>
-                  {{ formatDate(order.createdStamp) }}
-                  <p>{{ $t("Created Date") }}</p>
+                  {{ formatDate(order.orderDate) }}
+                  <p>{{ $t("Order date") }}</p>
                 </ion-label>
               </div>
-              <div class="tablet ion-text-center">
-                <ion-label>
-                  {{ order.items.length }}
-                  <p>{{ $t("Items") }}</p>
-                </ion-label>
-              </div>
-              <div class="tablet ion-text-center">
-                <ion-label>
-                  {{ order.shipments.length }}
-                  <p>{{ $t("Shipments") }}</p>
-                </ion-label>
-              </div>
+              <ion-badge>{{ order.orderStatusDesc || order.orderStatusId }}</ion-badge>
             </div>
           </section>
         </div>
@@ -106,6 +95,7 @@
 
 <script lang="ts">
 import {
+  IonBadge,
   IonButtons,
   IonContent,
   IonHeader,
@@ -137,6 +127,7 @@ import { getProductIdentificationValue, useProductIdentificationStore } from "@h
 export default defineComponent({
   name: "purchase-orders",
   components: {
+    IonBadge,
     IonButtons,
     IonContent,
     IonHeader,
@@ -179,10 +170,11 @@ export default defineComponent({
       },
       facilityId: '',
       isLoading: false,
+      viewSize: 10,
       isScrollingEnabled: false,
       showFilters: false,
       showOrderItems: true,
-      sortBy: 'createdStamp',
+      sortBy: '-orderDate',
       sortDirection: 'asc'
     }
   },
@@ -192,8 +184,10 @@ export default defineComponent({
       facilities: 'util/getFacilities',
       getFacilityName: 'util/getFacilityName',
       total: 'purchaseOrder/getListTotal',
+      isScrollable: 'purchaseOrder/isScrollable',
       getProduct: 'product/getProduct',
       currentEComStore: 'user/getCurrentEComStore',
+      productStoreFacilities: 'user/getProductStoreFacilities'
     }),
   },
   ionViewWillEnter() {
@@ -221,14 +215,20 @@ export default defineComponent({
     formatDate(value: any) {
       return this.parseDate(value)?.toFormat('d LLL yyyy') || '-';
     },
+    async fetchPurchaseOrders(pageIndex = 0) {
+      await this.store.dispatch("purchaseOrder/fetchPurchaseOrders", {
+        orderBy: this.sortBy,
+        ...(this.localQuery.keyword.trim() && { keyword: this.localQuery.keyword.trim() }),
+        ...(this.facilityId && { facilityId: this.facilityId }),
+        productStoreId: this.currentEComStore.productStoreId,
+        pageIndex,
+        limit: this.viewSize
+      });
+    },
     async search() {
       this.isLoading = true;
-      await this.store.dispatch("purchaseOrder/fetchFutureInventory", {
-        orderByField: this.sortBy,
-        ...(this.localQuery.keyword.trim() && { externalId: this.localQuery.keyword.trim() }),
-        ...(this.facilityId && { facilityId: this.facilityId }),
-        productStoreId: this.currentEComStore.productStoreId
-      });
+      this.isScrollingEnabled = false;
+      await this.fetchPurchaseOrders();
       this.isLoading = false;
     },
     async refresh(event: any) {
@@ -250,26 +250,15 @@ export default defineComponent({
       const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
       this.isScrollingEnabled = distanceFromInfinite >= 0
     },
-    // async loadMore(event: any) {
-    //   if (!(this.isScrollingEnabled && this.isScrollable)) {
-    //     await event.target.complete()
-    //     return
-    //   }
-    //   const parentElement = (this as any).$refs.contentRef.$el
-    //   const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
-    //   const scrollTopBefore = scrollEl?.scrollTop || 0
-
-    //   await this.store.dispatch('purchaseOrder/updateQuery', {
-    //     query: {
-    //       ...this.localQuery,
-    //       productStoreId: this.currentEComStore?.productStoreId || '',
-    //       groupBy: this.groupBy,
-    //       pageIndex: this.query.pageIndex + 1
-    //     }
-    //   })
-    //   await (this as any).$refs.contentRef.$el.scrollToPoint(0, scrollTopBefore, 0)
-    //   event.target.complete()
-    // }
+    async loadMore(event: any) {
+      // Prevents fetching the next page when the user has not scrolled
+      if(!(this.isScrollingEnabled && this.isScrollable)) {
+        await event.target.complete()
+        return
+      }
+      await this.fetchPurchaseOrders(Math.ceil(this.orders.length / this.viewSize))
+      await event.target.complete()
+    }
   },
   setup() {
     const router = useRouter();
@@ -319,7 +308,7 @@ export default defineComponent({
 
 .purchase-order-results .list-item {
   --columns-tablet: 5;
-  --columns-desktop: 6;
+  --columns-desktop: 5;
 }
 
 .purchase-order-results .purchase-order-group-header {
