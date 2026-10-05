@@ -116,6 +116,10 @@ const actions: ActionTree<UtilState, RootState> = {
       commit(types.UTIL_STORE_INV_CONFIG_UPDATED, {})
     },
 
+    async clearFacilities({ commit }) {
+      commit(types.UTIL_FACILITIES_UPDATED, {})
+    },
+
   async getEnumDetails({ commit, state }) {
     if (Object.keys(state.enums).length) return
 
@@ -144,7 +148,7 @@ const actions: ActionTree<UtilState, RootState> = {
         pageSize: 500
       }) 
       if(resp.data.length) {
-        commit(types.UTIL_FACILTIES_UPDATED, resp.data.reduce((facilities: any, facility: any) => {
+        commit(types.UTIL_FACILITIES_UPDATED, resp.data.reduce((facilities: any, facility: any) => {
           facilities[facility.facilityId] = facility
           return facilities;
         }, {}));

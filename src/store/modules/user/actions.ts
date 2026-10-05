@@ -245,6 +245,7 @@ const actions: ActionTree<UserState, RootState> = {
       // Reset all the current queries
       this.dispatch("product/resetProductList")
       this.dispatch("order/resetOrderQuery")
+      this.dispatch("util/clearFacilities")
 
       if(state.isMoquiOnly) {
         UserMaargService.setProductStorePreference({
